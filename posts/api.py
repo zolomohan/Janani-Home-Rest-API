@@ -13,6 +13,14 @@ class PostViewSet(viewsets.ModelViewSet):
         permissions.AllowAny
     ]
 
+    
+    def get_permissions(self):
+        if self.action == 'list' or self.action == 'retrieve':
+            permission_classes = [permissions.AllowAny]
+        else:
+            permission_classes = [permissions.IsAuthenticated]
+        return [permission() for permission in permission_classes]
+
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
