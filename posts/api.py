@@ -65,6 +65,13 @@ class PostViewSet(viewsets.ModelViewSet):
         return Response(status=200)
 
     @action(methods=['get'], detail=True)
+    def likecount(self, serializer, pk):
+        post = Post.objects.get(pk=pk)
+        likes = Like.objects.filter(post=post).count()
+        dislikes = Dislike.objects.filter(post=post).count()
+        return Response({"likes": likes, "dislikes": dislikes});
+
+    @action(methods=['get'], detail=True)
     def likestatus(self, serializer, pk):
         post = Post.objects.get(pk=pk)
         liked = None
