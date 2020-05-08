@@ -63,3 +63,21 @@ class PostViewSet(viewsets.ModelViewSet):
         post = Post.objects.get(pk=pk)
         Dislike.objects.get(post=post, user=self.request.user).delete()
         return Response(status=200)
+
+    @action(methods=['get'], detail=True)
+    def likestatus(self, serializer, pk):
+        post = Post.objects.get(pk=pk)
+        liked = None
+        disliked = None
+        try:
+            like = Like.objects.get(user=self.request.user, post=post)
+            return Response({"liked": True})
+        except Like.DoesNotExist:
+            pass
+
+        try:
+            dislied = Dislike.objects.get(user=self.request.user, post=post).delete()
+            return Response({"disliked": True})
+        except Dislike.DoesNotExist:
+            pass
+        return Response({"liked": False, "disliked": False})
