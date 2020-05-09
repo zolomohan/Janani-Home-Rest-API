@@ -1,10 +1,9 @@
 from rest_framework import viewsets, permissions
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from django.shortcuts import get_object_or_404
-from .serializer import PostSerializer, LikeSerializer, DislikeSerializer
+from .serializer import PostSerializer, LikeSerializer, DislikeSerializer, CommentSerializer
 from django.contrib.auth.models import User
-from .models import Post, Like, Dislike
+from .models import Post, Like, Dislike, Comment
 
 
 class PostViewSet(viewsets.ModelViewSet):
@@ -12,7 +11,7 @@ class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all()
 
     def get_permissions(self):
-        if self.action == 'list' or self.action == 'retrieve':
+        if self.action in ['list', 'retrieve', 'likecount', 'comment']:
             permission_classes = [permissions.AllowAny]
         else:
             permission_classes = [permissions.IsAuthenticated]
@@ -69,22 +68,46 @@ class PostViewSet(viewsets.ModelViewSet):
         post = Post.objects.get(pk=pk)
         likes = Like.objects.filter(post=post).count()
         dislikes = Dislike.objects.filter(post=post).count()
-        return Response({"likes": likes, "dislikes": dislikes});
+        return Response({"likes": likes, "dislikes": dislikes})
 
     @action(methods=['get'], detail=True)
-    def likestatus(self, serializer, pk):
+    def userpostlike(self, serializer, pk):
         post = Post.objects.get(pk=pk)
-        liked = None
-        disliked = None
         try:
-            like = Like.objects.get(user=self.request.user, post=post)
+            liked = Like.objects.get(user=self.request.user, post=post)
             return Response({"liked": True})
         except Like.DoesNotExist:
             pass
 
         try:
-            dislied = Dislike.objects.get(user=self.request.user, post=post).delete()
+            disliked = Dislike.objects.get(user=self.request.user, post=post)
             return Response({"disliked": True})
         except Dislike.DoesNotExist:
             pass
         return Response({"liked": False, "disliked": False})
+
+    @action(methods=['post', 'get'], detail=True)
+    def comment(self, serializer, pk):
+        post = Post.objects.get(pk=pk)
+        if self.request.method == 'POST':
+            if self.request.auth != None:
+                comment = Comment(post=post, user=self.request.user, body=self.request.data['comment'])
+                comment.save()
+                return Response(CommentSerializer(comment).data, status=200)
+            return Response(status=401)
+        elif self.request.method == 'GET':
+            comment = Comment.objects.filter(post=post, disabled=False)
+            serializer = CommentSerializer(comment, many=True)
+            return Response(serializer.data)
+
+    @action(methods=['post'], detail=False)
+    def disablecomment(self, serializer):
+        comment = Comment.objects.get(id=self.request.data['id'])
+        if(comment.disabled):
+            return Response({"error": "Comment Not Found, Might be disabled already."}, status=400)
+        if(comment.user != self.request.user):
+            return Response(status=401)
+        comment.disabled = True
+        comment.save()
+        return Response(status=200)
+    

@@ -27,3 +27,11 @@ class Dislike(models.Model):
 
 	class Meta:
 		unique_together = ('post', 'user',)
+
+
+class Comment(models.Model):
+	post = models.ForeignKey(Post, related_name='comment', on_delete=models.CASCADE, null=True)
+	user = models.ForeignKey(User, related_name='comment', on_delete=models.CASCADE, null=True)
+	body = models.CharField(max_length=200)
+	disabled = models.BooleanField(default=False)
+	created_at = models.DateTimeField(auto_now_add=True)
