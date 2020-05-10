@@ -21,8 +21,20 @@ class PostViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
+    def list(self, serializer):
+        post = Post.objects.filter(active=True)
+        data = PostSerializer(post, many=True).data
+        for post in data:
+            post['owner'] = User.objects.get(pk=post['owner']).username
+        return Response(data)
+
     def retrieve(self, serializerm, pk):
-        post = Post.objects.get(pk=pk)
+        try:
+            post = Post.objects.get(pk=pk)
+        except Post.DoesNotExist:
+            return Response({"error": "Post does not exist in the database."}, status=400)
+        if(post.owner != self.request.user and not post.active):
+            return Response(status=401)
         data = PostSerializer(post).data
         data['owner'] = post.owner.username
         return Response(data)
