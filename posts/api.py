@@ -28,7 +28,7 @@ class PostViewSet(viewsets.ModelViewSet):
             post['owner'] = User.objects.get(pk=post['owner']).username
         return Response(data)
 
-    def retrieve(self, serializerm, pk):
+    def retrieve(self, serializer, pk):
         try:
             post = Post.objects.get(pk=pk)
         except Post.DoesNotExist:
@@ -41,16 +41,17 @@ class PostViewSet(viewsets.ModelViewSet):
         data['owner'] = post.owner.username
         data['likes'] = Like.objects.filter(post=post).count()
         data['dislikes'] = Dislike.objects.filter(post=post).count()
-        try:
-            liked = Like.objects.get(user=self.request.user, post=post)
-            data['user_liked'] = True
-        except Like.DoesNotExist:
-            data['user_liked'] = False
-        try:
-            disliked = Dislike.objects.get(user=self.request.user, post=post)
-            data['user_disliked'] = True
-        except Dislike.DoesNotExist:
-            data['user_disliked'] = False
+        if(self.request.auth):
+            try:
+                liked = Like.objects.get(user=self.request.user, post=post)
+                data['user_liked'] = True
+            except Like.DoesNotExist:
+                data['user_liked'] = False
+            try:
+                disliked = Dislike.objects.get(user=self.request.user, post=post)
+                data['user_disliked'] = True
+            except Dislike.DoesNotExist:
+                data['user_disliked'] = False
         return Response(data)
 
     @action(methods=['post'], detail=True)
