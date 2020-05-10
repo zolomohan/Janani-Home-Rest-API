@@ -12,7 +12,7 @@ class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all()
 
     def get_permissions(self):
-        if self.action in ['list', 'retrieve', 'likecount', 'comment']:
+        if self.action in ['list', 'retrieve', 'comment']:
             permission_classes = [permissions.AllowAny]
         else:
             permission_classes = [permissions.IsAuthenticated]
@@ -33,10 +33,24 @@ class PostViewSet(viewsets.ModelViewSet):
             post = Post.objects.get(pk=pk)
         except Post.DoesNotExist:
             return Response({"error": "Post does not exist in the database."}, status=400)
+
         if(post.owner != self.request.user and not post.active):
-            return Response(status=401)
+            return Response({"error": "Post has been disabled by the user."}, status=400)
+        
         data = PostSerializer(post).data
         data['owner'] = post.owner.username
+        data['likes'] = Like.objects.filter(post=post).count()
+        data['dislikes'] = Dislike.objects.filter(post=post).count()
+        try:
+            liked = Like.objects.get(user=self.request.user, post=post)
+            data['user_liked'] = True
+        except Like.DoesNotExist:
+            data['user_liked'] = False
+        try:
+            disliked = Dislike.objects.get(user=self.request.user, post=post)
+            data['user_disliked'] = True
+        except Dislike.DoesNotExist:
+            data['user_disliked'] = False
         return Response(data)
 
     @action(methods=['post'], detail=True)
@@ -82,32 +96,13 @@ class PostViewSet(viewsets.ModelViewSet):
         Dislike.objects.get(post=post, user=self.request.user).delete()
         return Response(status=200)
 
-    @action(methods=['get'], detail=True)
-    def likecount(self, serializer, pk):
-        post = Post.objects.get(pk=pk)
-        likes = Like.objects.filter(post=post).count()
-        dislikes = Dislike.objects.filter(post=post).count()
-        return Response({"likes": likes, "dislikes": dislikes})
-
-    @action(methods=['get'], detail=True)
-    def userpostlike(self, serializer, pk):
-        post = Post.objects.get(pk=pk)
-        try:
-            liked = Like.objects.get(user=self.request.user, post=post)
-            return Response({"liked": True})
-        except Like.DoesNotExist:
-            pass
-
-        try:
-            disliked = Dislike.objects.get(user=self.request.user, post=post)
-            return Response({"disliked": True})
-        except Dislike.DoesNotExist:
-            pass
-        return Response({"liked": False, "disliked": False})
-
     @action(methods=['post', 'get'], detail=True)
     def comment(self, serializer, pk):
+
         post = Post.objects.get(pk=pk)
+        if(not post.active):
+            return Response({"error": "Post does not exist in the database."}, status=400)
+
         if self.request.method == 'POST':
             if self.request.auth != None:
                 comment = Comment(post=post, user=self.request.user, body=self.request.data['comment'])
