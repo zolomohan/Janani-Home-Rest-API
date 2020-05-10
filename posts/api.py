@@ -1,6 +1,7 @@
 from rest_framework import viewsets, permissions
 from rest_framework.response import Response
 from rest_framework.decorators import action
+from accounts.serializer import UserSerializer
 from .serializer import PostSerializer, LikeSerializer, DislikeSerializer, CommentSerializer
 from django.contrib.auth.models import User
 from .models import Post, Like, Dislike, Comment
@@ -19,6 +20,12 @@ class PostViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
+
+    def retrieve(self, serializerm, pk):
+        post = Post.objects.get(pk=pk)
+        data = PostSerializer(post).data
+        data['owner'] = post.owner.username
+        return Response(data)
 
     @action(methods=['post'], detail=True)
     def toggle(self, serializer, pk):
@@ -96,8 +103,10 @@ class PostViewSet(viewsets.ModelViewSet):
                 return Response(CommentSerializer(comment).data, status=200)
             return Response(status=401)
         elif self.request.method == 'GET':
-            comment = Comment.objects.filter(post=post, disabled=False)
-            serializer = CommentSerializer(comment, many=True)
+            comments = Comment.objects.filter(post=post, disabled=False)
+            serializer = CommentSerializer(comments, many=True)
+            for comment in serializer.data:
+                comment['user'] = User.objects.get(pk=comment['user']).username
             return Response(serializer.data)
 
     @action(methods=['post'], detail=False)
@@ -110,4 +119,3 @@ class PostViewSet(viewsets.ModelViewSet):
         comment.disabled = True
         comment.save()
         return Response(status=200)
-    
