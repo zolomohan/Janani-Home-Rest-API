@@ -1,6 +1,12 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+
+# A model is the single, definitive source of information about your data. 
+# It contains the essential fields and behaviors of the data you’re storing. 
+# Generally, each model maps to a single database table.
+
+
 class Post(models.Model):
 	owner = models.ForeignKey(User, related_name='posts', on_delete=models.CASCADE, null=True)
 	title = models.CharField(max_length=150)
@@ -19,6 +25,7 @@ class Like(models.Model):
 	user = models.ForeignKey(User, related_name='like', on_delete=models.CASCADE, null=True)
 
 	class Meta:
+		# The Post and User field together is made into a Composite Primary Key.
 		unique_together = ('post', 'user',)
 
 class Dislike(models.Model):
@@ -26,6 +33,7 @@ class Dislike(models.Model):
 	user = models.ForeignKey(User, related_name='unlike', on_delete=models.CASCADE, null=True)
 
 	class Meta:
+		# The Post and User field together is made into a Composite Primary Key.
 		unique_together = ('post', 'user',)
 
 
