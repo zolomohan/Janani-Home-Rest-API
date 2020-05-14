@@ -237,7 +237,7 @@ class PostViewSet(viewsets.ModelViewSet):
             GET: 
                 The serialized data of the list of comments associated to the post.
             POST:
-                The newly created comment data along with a status code of 200.
+                The newly created comment data along with a status code of 200 (OK).
                 or
                 Response code of 401 (Unauthorized) if the user is not authenticated.
         """
@@ -273,22 +273,17 @@ class PostViewSet(viewsets.ModelViewSet):
     def disablecomment(self, serializer):
         """
         This endpoint is used to disable a comment. The disabled attribute is set to True.
-        1. GET: The function returns all the comments of the requested post.
-        2. POST: The function created a new comment and stores it in the databse.
-
+        The body of the request must contain the ID of the comment that has to be disabled.
         Args:
             self: Represents the instance of the class.
             serializer: The serializer of the model.
-            pk: Primary key of the post.
 
         Return:
-            Response code of 400 (Bad Request) if the post is disabled.
-            GET: 
-                The serialized data of the list of comments associated to the post.
-            POST:
-                The newly created comment data along with a status code of 200.
-                or
-                Response code of 401 (Unauthorized) if the user is not authenticated.
+            Response code of 400 (Bad Request) if the comment is already disabled.
+            or
+            Response code of 401 (Unauthorized) if the user is not the owner of the comment.
+            or
+            Response code of 200 (OK) if the task is completed.
         """
         comment = Comment.objects.get(id=self.request.data['id'])
 
