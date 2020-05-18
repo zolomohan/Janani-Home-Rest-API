@@ -45,7 +45,6 @@ class PostViewSet(viewsets.ModelViewSet):
 
     # TODO: Paginate the response.
     def list(self, serializer):
-        def perform_create(self, serializer):
         """
         Endpoint for list of posts in the database.
 
@@ -203,7 +202,8 @@ class PostViewSet(viewsets.ModelViewSet):
 
     # ENDPOINT: Used to remove a dislike of the post.
     @action(methods=['post'], detail=True)
-    """
+    def removedislike(self, serializer, pk):
+        """
         Endpoint for removing a dislike of a post.
         If the user who likes the post has already liked it, the Like entry is removed from the database.
 
@@ -215,7 +215,6 @@ class PostViewSet(viewsets.ModelViewSet):
         Return:
             Response code of 200 (OK) if the task is completed.
         """
-    def removedislike(self, serializer, pk):
         post = Post.objects.get(pk=pk)
         Dislike.objects.get(post=post, user=self.request.user).delete()
         return Response(status=200)

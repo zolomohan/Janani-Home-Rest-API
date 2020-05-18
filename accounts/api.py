@@ -9,7 +9,7 @@ class RegisterAPI(generics.GenericAPIView):
     serializer_class = RegisterSerializer
 
     def post(self, request, *args, **kwargs):
-         """
+        """
         Creates an User, stores it in the database and Authenticates the user.
 
         Args:
