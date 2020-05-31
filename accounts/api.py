@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from knox.models import AuthToken
 from .serializer import UserSerializer, RegisterSerializer, LoginSerializer, ProfileSerializer
 from .models import Profile
+from django.contrib.auth.models import User
 
 # The generic views provided by REST framework allow you to quickly build API views that map closely to your database models.
 
@@ -83,7 +84,28 @@ class ProfileViewSet(mixins.CreateModelMixin,
            The access permission for the endpoints of this viewset.
         """
         permission_classes = []
-        
+
         if self.action in ['retrieve']:
             permission_classes = [permissions.AllowAny]
+        elif self.action in ['create', 'partial_update']:
+            permission_classes = [permissions.IsAuthenticated]
         return [permission() for permission in permission_classes]
+
+    def create(self, request, *args, **kwargs):
+        if(self.request.user.id == self.request.data['user']):
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+            headers = self.get_success_headers(serializer.data)
+            return Response(serializer.data, status=201, headers=headers)
+        return Response({"profile": "You are not authorized to perform this action."}, status=401)
+
+    def retrieve(self, serializer, pk):
+        user = User.objects.get(username=pk)
+        try:
+            profile = Profile.objects.get(user=user)
+        except Profile.DoesNotExist:
+            return Response({"profile": "Profile Does Not Exist"}, status=400)
+
+        data = ProfileSerializer(profile).data
+        return Response(data, status=200)

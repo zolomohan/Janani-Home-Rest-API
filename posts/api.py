@@ -24,7 +24,7 @@ class PostViewSet(viewsets.ModelViewSet):
            The access permission for the endpoints of this viewset.
         """
 
-        if self.action in ['list', 'retrieve', 'comment', 'user']:
+        if self.action in ['list', 'retrieve', 'comment', 'active']:
             permission_classes = [permissions.AllowAny]
         else:
             permission_classes = [permissions.IsAuthenticated]
@@ -62,7 +62,7 @@ class PostViewSet(viewsets.ModelViewSet):
         return Response(data)
 
     @action(methods=['get'], detail=True)
-    def user(self, serializer, pk):
+    def active(self, serializer, pk):
         """
         Endpoint for list of posts created by a certain user.
 
@@ -78,6 +78,26 @@ class PostViewSet(viewsets.ModelViewSet):
         for post in data:
             post['owner'] = User.objects.get(pk=post['owner']).username
         return Response(data)
+
+    @action(methods=['get'], detail=True)
+    def disabled(self, serializer, pk):
+        """
+        Endpoint for list of posts disabled by a certain user.
+
+        Args:
+            self: Represents the instance of the class.
+            serializer: The serializer of the model.
+        """
+        if(self.request.user.username == pk):
+            user = User.objects.get(username=pk)
+            post = Post.objects.filter(active=False, owner=user)
+            data = PostSerializer(post, many=True).data
+
+            # The response is populated with the Post owner's information before response.
+            for post in data:
+                post['owner'] = User.objects.get(pk=post['owner']).username
+            return Response(data)
+        return Response({"detail": "You are not authorized to access this data."}, status=401)
 
     # This function is used to respond with the requested post. The post is requested using the Post's ID.
     def retrieve(self, serializer, pk):
