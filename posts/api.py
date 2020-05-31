@@ -24,7 +24,7 @@ class PostViewSet(viewsets.ModelViewSet):
            The access permission for the endpoints of this viewset.
         """
 
-        if self.action in ['list', 'retrieve', 'comment']:
+        if self.action in ['list', 'retrieve', 'comment', 'user']:
             permission_classes = [permissions.AllowAny]
         else:
             permission_classes = [permissions.IsAuthenticated]
@@ -54,6 +54,24 @@ class PostViewSet(viewsets.ModelViewSet):
         """
 
         post = Post.objects.filter(active=True)
+        data = PostSerializer(post, many=True).data
+
+        # The response is populated with the Post owner's information before response.
+        for post in data:
+            post['owner'] = User.objects.get(pk=post['owner']).username
+        return Response(data)
+
+    @action(methods=['get'], detail=True)
+    def user(self, serializer, pk):
+        """
+        Endpoint for list of posts created by a certain user.
+
+        Args:
+            self: Represents the instance of the class.
+            serializer: The serializer of the model.
+        """
+        user = User.objects.get(pk=pk)
+        post = Post.objects.filter(active=True, owner=user)
         data = PostSerializer(post, many=True).data
 
         # The response is populated with the Post owner's information before response.
