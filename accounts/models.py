@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 
 class Profile(models.Model):
-  user = models.ForeignKey(User, related_name='profile', on_delete=models.CASCADE, null=True)
+  user = models.OneToOneField(User, related_name='profile', on_delete=models.CASCADE, null=True)
   dob = models.DateField()
   phone = models.CharField(max_length=15)
   phone_alt = models.CharField(max_length=15)
