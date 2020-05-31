@@ -70,7 +70,7 @@ class PostViewSet(viewsets.ModelViewSet):
             self: Represents the instance of the class.
             serializer: The serializer of the model.
         """
-        user = User.objects.get(pk=pk)
+        user = User.objects.get(username=pk)
         post = Post.objects.filter(active=True, owner=user)
         data = PostSerializer(post, many=True).data
 
@@ -97,7 +97,7 @@ class PostViewSet(viewsets.ModelViewSet):
             post = Post.objects.get(pk=pk)
         except Post.DoesNotExist:
             return Response({"error": "Post does not exist in the database."}, status=400)
-
+        
         if(post.owner != self.request.user and not post.active):
             return Response({"error": "Post has been disabled by the user."}, status=400)
 
